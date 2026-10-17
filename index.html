@@ -22,6 +22,8 @@
   --lr: #2a78d6;   /* Logistic Regression - categorical slot 1 */
   --rf: #eb6834;   /* Random Forest - categorical slot 2 */
   --xgb: #1baf7a;  /* XGBoost - categorical slot 3 */
+  --lgbm: #eda100; /* LightGBM - categorical slot 4 */
+  --cat: #e87ba4;  /* CatBoost - categorical slot 5 */
   --good: #0a8a0a;
   --wash: #eef4fc;
 }
@@ -30,14 +32,14 @@
     color-scheme: dark;
     --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7;
     --muted: #8f8d86; --grid: #2c2c2a; --axis: #45453f; --border: rgba(255,255,255,0.08);
-    --shadow: none; --lr: #3987e5; --rf: #d95926; --xgb: #199e70; --good: #0ca30c; --wash: #16233a;
+    --shadow: none; --lr: #3987e5; --rf: #d95926; --xgb: #199e70; --lgbm: #c98500; --cat: #d55181; --good: #0ca30c; --wash: #16233a;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7;
   --muted: #8f8d86; --grid: #2c2c2a; --axis: #45453f; --border: rgba(255,255,255,0.08);
-  --shadow: none; --lr: #3987e5; --rf: #d95926; --xgb: #199e70; --good: #0ca30c; --wash: #16233a;
+  --shadow: none; --lr: #3987e5; --rf: #d95926; --xgb: #199e70; --lgbm: #c98500; --cat: #d55181; --good: #0ca30c; --wash: #16233a;
 }
 * { box-sizing: border-box; }
 body {
@@ -64,7 +66,7 @@ h1 { margin: 2px 0 6px; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.25
 .legend span { display: inline-flex; align-items: center; gap: 7px; }
 .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
 .ref-sw { width: 18px; border-top: 2px dashed var(--muted); display: inline-block; }
-.sw.lr { background: var(--lr); } .sw.xgb { background: var(--xgb); } .sw.rf { background: var(--rf); }
+.sw.lr { background: var(--lr); } .sw.xgb { background: var(--xgb); } .sw.lgbm { background: var(--lgbm); } .sw.cat { background: var(--cat); } .sw.rf { background: var(--rf); }
 .page-legend { margin-top: 18px; }
 
 /* KPI row */
@@ -108,7 +110,7 @@ h1 { margin: 2px 0 6px; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.25
 .val-label { fill: var(--ink); font-size: 12px; font-weight: 600; font-family: inherit; }
 .cross { stroke: var(--axis); stroke-width: 1; }
 .hit { fill: transparent; cursor: crosshair; }
-.f-lr { fill: var(--lr); } .f-xgb { fill: var(--xgb); } .s-xgb { stroke: var(--xgb); } .f-rf { fill: var(--rf); }
+.f-lr { fill: var(--lr); } .f-xgb { fill: var(--xgb); } .s-xgb { stroke: var(--xgb); } .f-lgbm { fill: var(--lgbm); } .s-lgbm { stroke: var(--lgbm); } .f-cat { fill: var(--cat); } .s-cat { stroke: var(--cat); } .f-rf { fill: var(--rf); }
 .s-lr { stroke: var(--lr); } .s-rf { stroke: var(--rf); }
 .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .dot { stroke: var(--surface); stroke-width: 2; }
@@ -129,6 +131,74 @@ td.num, th.num { text-align: left; }
 .verdict-box { background: var(--wash); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; font-size: 1rem; }
 .verdict-box b { font-weight: 700; }
 .auc-legend { margin-top: -2px; font-size: .84rem; }
+.sw.ghost { background: var(--axis); }
+.ghost-bar { opacity: .38; }
+.err-l { stroke: var(--ink-2); stroke-width: 1.5; }
+.dumb-l { stroke: var(--axis); stroke-width: 2; }
+.hollow { fill: var(--surface); stroke-width: 2; }
+.grp-label { fill: var(--ink); font-size: 12px; font-weight: 600; font-family: inherit; }
+.param-list { display: grid; gap: 2px; font-size: .86rem; }
+.param-list .pv { color: var(--muted); }
+.param-list .pv b { color: var(--ink); background: var(--wash); border-radius: 4px; padding: 0 4px; }
+.up { color: var(--good); font-weight: 600; }
+.down { color: #d03b3b; font-weight: 600; }
+.chg-card { margin-top: 16px; }
+/* process tab */
+.stepper { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 18px; }
+.stepper a { text-decoration: none; color: var(--ink-2); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: .86rem; }
+.stepper a:hover { color: var(--ink); border-color: var(--lr); }
+.stepper a b { color: var(--lr); margin-inline-end: 4px; }
+.stepper .arr { color: var(--muted); font-size: .8rem; }
+.steps { display: grid; gap: 14px; }
+.phase { font-weight: 700; color: var(--lr); font-size: .95rem; padding: 6px 0 0; border-bottom: 2px solid var(--wash); }
+.step { display: grid; grid-template-columns: 44px 1fr; gap: 14px; }
+.step-num { width: 40px; height: 40px; border-radius: 50%; background: var(--lr); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 1.05rem; }
+.step-line { position: relative; }
+.step-line::after { content: ""; position: absolute; top: 46px; bottom: -14px; inset-inline-start: 19px; width: 2px; background: var(--grid); }
+.step:last-child .step-line::after { display: none; }
+.step .card { padding-bottom: 14px; }
+.step h3 { font-size: 1.1rem; }
+.step p { margin: 6px 0; color: var(--ink-2); }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+.fact { background: var(--wash); border-radius: 10px; padding: 6px 12px; font-size: .86rem; color: var(--ink-2); }
+.fact b { color: var(--ink); font-size: 1rem; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--lr); font-size: .88rem; font-weight: 500; }
+pre { direction: ltr; text-align: left; background: var(--page); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-size: .82rem; line-height: 1.5; margin: 8px 0 0; }
+code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+.split { direction: ltr; display: flex; height: 34px; border-radius: 8px; overflow: hidden; margin: 10px 0 4px; font-size: .85rem; font-weight: 600; }
+.split div { display: grid; place-items: center; color: #fff; }
+.split .tr { background: var(--lr); flex: 80; }
+.split .te { background: var(--rf); flex: 20; }
+.transform { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin-top: 10px; }
+.transform .col { background: var(--page); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: .84rem; }
+.transform .col h4 { margin: 0 0 6px; font-size: .9rem; }
+.transform .arrow { color: var(--muted); font-size: 1.4rem; }
+.transform .tag { display: inline-block; direction: ltr; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1px 7px; margin: 2px; font-size: .78rem; }
+.transform .tag.cat { border-color: var(--rf); }
+.cms { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 12px; }
+.cm h4 { margin: 0 0 6px; font-size: .92rem; display: flex; align-items: center; gap: 6px; }
+.cm-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 3px; font-size: .8rem; }
+.cm-grid .h { color: var(--muted); text-align: center; padding: 2px; }
+.cm-grid .rh { color: var(--muted); display: grid; place-items: center; padding: 0 6px; writing-mode: horizontal-tb; }
+.cm-grid .c { border-radius: 6px; padding: 8px 4px; text-align: center; color: var(--ink); }
+.cm-grid .c b { display: block; font-size: 1.05rem; }
+.cm-grid .c span { color: var(--ink-2); font-size: .74rem; }
+@media (max-width: 860px) { .cms { grid-template-columns: 1fr; } .transform { grid-template-columns: 1fr; } .transform .arrow { transform: rotate(90deg); justify-self: center; } }
+.chg-card td { vertical-align: middle; }
+.chg-card tr.grp-start td { border-top: 2px solid var(--axis); }
+.chg-card td.model-cell { font-weight: 600; white-space: nowrap; }
+.chg-card td.after { font-weight: 700; }
+.chg-card .delta { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.chg-card .delta .pct { color: var(--muted); font-weight: 400; font-size: .82rem; }
+.mini { direction: ltr; width: 100%; min-width: 150px; display: grid; gap: 3px; }
+.mini .track { position: relative; height: 9px; background: var(--grid); border-radius: 4px; }
+.mini .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; }
+.mini .fill.before { opacity: .38; }
+.chg-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .82rem; color: var(--ink-2); margin: 4px 0 10px; }
+.chg-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chg-legend i { width: 22px; height: 8px; border-radius: 3px; background: var(--ink-2); display: inline-block; }
+.chg-legend i.b { opacity: .38; }
 .cmp-card { margin-top: 14px; }
 .cmp-card td { vertical-align: top; }
 .cmp-card th { white-space: nowrap; }
@@ -150,8 +220,8 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
   <header class="top">
     <div>
       <div class="eyebrow">חיזוי עזיבת לקוחות בנק · Churn Modelling</div>
-      <h1>השוואת מודלים: רגרסיה לוגיסטית, Random Forest ו-XGBoost</h1>
-      <p class="lead">שלושה מודלים חוזים אילו לקוחות יעזבו את הבנק (<span class="ltr">Exited = 1</span>). כל המדדים מחושבים על 20% נתוני המבחן, שהמודלים לא ראו באימון.</p>
+      <h1>השוואת 5 מודלים לחיזוי עזיבת לקוחות</h1>
+      <p class="lead">רגרסיה לוגיסטית, Random Forest, XGBoost, LightGBM ו-CatBoost חוזים אילו לקוחות יעזבו את הבנק (<span class="ltr">Exited = 1</span>). כל המדדים מחושבים על 20% נתוני המבחן, שהמודלים לא ראו באימון.</p>
       <div class="chips" id="chips"></div>
     </div>
     <button class="theme-btn" id="themeBtn" type="button">מצב כהה / בהיר</button>
@@ -159,7 +229,7 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
 
   <div class="legend page-legend">
     <span><i class="sw lr"></i>Logistic Regression</span>
-    <span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span>
+    <span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="sw lgbm"></i>LightGBM</span><span><i class="sw cat"></i>CatBoost</span>
   </div>
   <section class="kpis" id="kpis" aria-label="מדדים מרכזיים"></section>
 
@@ -167,6 +237,8 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
     <button class="tab" role="tab" data-tab="cls" aria-selected="true">1 · השוואה לפי הקריטריונים</button>
     <button class="tab" role="tab" data-tab="pred" aria-selected="false">2 · בפועל מול חזוי ושאריות</button>
     <button class="tab" role="tab" data-tab="imp" aria-selected="false">3 · חשיבות משתנים</button>
+    <button class="tab" role="tab" data-tab="tune" aria-selected="false">4 · כוונון היפר-פרמטרים</button>
+    <button class="tab" role="tab" data-tab="steps" aria-selected="false">5 · שלבי בניית המודל</button>
   </nav>
 
   <section class="panel" id="panel-cls" role="tabpanel">
@@ -180,13 +252,13 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
       <div class="card">
         <h3>Recall, Precision, F1 ו-AUC</h3>
         <p class="sub">ערך גבוה יותר = מודל טוב יותר</p>
-        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span></div>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="sw lgbm"></i>LightGBM</span><span><i class="sw cat"></i>CatBoost</span></div>
         <div class="chart" id="c-bars"></div>
       </div>
       <div class="card">
         <h3>עקומת ROC</h3>
         <p class="sub">ככל שהעקומה קרובה יותר לפינה השמאלית-עליונה, המודל טוב יותר</p>
-        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="ref-sw"></i>ניחוש אקראי</span></div>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="sw lgbm"></i>LightGBM</span><span><i class="sw cat"></i>CatBoost</span><span><i class="ref-sw"></i>ניחוש אקראי</span></div>
         <div class="legend auc-legend" id="auc-legend"></div>
         <div class="chart" id="c-roc"></div>
       </div>
@@ -194,19 +266,19 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
   </section>
 
   <section class="panel" id="panel-pred" role="tabpanel" hidden>
-    <p class="panel-intro">המשתנה החזוי הוא ההסתברות לעזיבה (0 עד 1), והערך בפועל הוא 0 או 1. כאן הוא מוצג כמו מודל רגרסיה: R² ו-MAE מחושבים על ההסתברות, והשארית היא <span class="ltr">בפועל − חזוי</span>.</p>
+    <p class="panel-intro">המשתנה החזוי הוא ההסתברות לעזיבה (0 עד 1), והערך בפועל הוא 0 או 1. כאן הוא מוצג כמו מודל רגרסיה: R² ו-MAE מחושבים על ההסתברות, והשארית היא <span class="ltr">בפועל − חזוי</span>. אחרי הכוונון כל המודלים נותנים משקל גבוה יותר ללקוחות שעוזבים (<span class="ltr">class_weight / scale_pos_weight</span>), ולכן ההסתברויות שהם חוזים גבוהות מהשיעור האמיתי: הנקודות נמצאות מתחת לקו המקווקו, וה-R² של הרגרסיה הלוגיסטית אפילו שלילי. זה המחיר של Recall גבוה יותר, והוא לא משפיע על AUC.</p>
     <div class="grid2">
       <div class="card">
         <h3>בפועל מול חזוי</h3>
         <p class="sub">לקוחות המבחן חולקו ל-10 קבוצות שוות לפי ההסתברות החזויה</p>
-        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="ref-sw"></i>חיזוי מושלם</span></div>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="sw lgbm"></i>LightGBM</span><span><i class="sw cat"></i>CatBoost</span><span><i class="ref-sw"></i>חיזוי מושלם</span></div>
         <div class="chart" id="c-calib"></div>
         <p class="note">נקודה על הקו המקווקו פירושה שהמודל צדק: למשל, בקבוצה שחזה לה 40% עזיבה, באמת עזבו 40%.</p>
       </div>
       <div class="card">
         <h3>התפלגות השאריות</h3>
         <p class="sub">כמה לקוחות יש בכל טווח של שגיאה</p>
-        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span></div>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="sw lgbm"></i>LightGBM</span><span><i class="sw cat"></i>CatBoost</span></div>
         <div class="chart" id="c-resid"></div>
         <p class="note">ככל שיותר לקוחות קרובים ל-0, המודל מדויק יותר. שארית שלילית: חזה עזיבה ללקוח שנשאר. שארית חיובית: פספס לקוח שעזב.</p>
       </div>
@@ -218,17 +290,142 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
   </section>
 
   <section class="panel" id="panel-imp" role="tabpanel" hidden>
-    <p class="panel-intro">אילו נתונים על הלקוח השפיעו הכי הרבה על החיזוי. ב-Random Forest זו חשיבות המשתנה בעצים (Gini importance). ב-XGBoost זה השיפור הממוצע שהמשתנה תורם בכל פיצול (gain). ברגרסיה הלוגיסטית זה הערך המוחלט של המקדם אחרי נרמול. בכל המודלים החשיבות מוצגת כאחוז מסך החשיבות, כדי שאפשר יהיה להשוות ביניהם.</p>
+    <p class="panel-intro">אילו נתונים על הלקוח השפיעו הכי הרבה על החיזוי. ב-Random Forest זו חשיבות המשתנה בעצים (Gini importance). ב-XGBoost וב-LightGBM זה השיפור שהמשתנה תורם בפיצולים (gain). ב-CatBoost זה כמה התחזית משתנה כשהמשתנה משתנה (PredictionValuesChange). ברגרסיה הלוגיסטית זה הערך המוחלט של המקדם אחרי נרמול. בכל המודלים החשיבות מוצגת כאחוז מסך החשיבות, כדי שאפשר יהיה להשוות ביניהם.</p>
     <div class="card">
       <h3>חשיבות משתנים</h3>
-      <p class="sub">ממוין לפי החשיבות הממוצעת בשלושת המודלים</p>
-      <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span></div>
+      <p class="sub">ממוין לפי החשיבות הממוצעת בכל המודלים</p>
+      <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="sw lgbm"></i>LightGBM</span><span><i class="sw cat"></i>CatBoost</span></div>
       <div class="chart" id="c-imp"></div>
       <p class="note" id="imp-note"></p>
     </div>
   </section>
 
-  <footer>נתונים: churn_modelling.csv (10,000 לקוחות) · חלוקה אקראית 80/20 מרובדת, random_state=42 · scikit-learn, XGBoost · הקובץ data.js נוצר על ידי train_model.py</footer>
+  <section class="panel" id="panel-tune" role="tabpanel" hidden>
+    <p class="panel-intro">לכל מודל הורץ <span class="ltr">GridSearchCV</span> עם <span class="ltr">5-Fold Cross-Validation</span> מרובד, על נתוני האימון בלבד (8,000 לקוחות). כל צירוף של פרמטרים אומן 5 פעמים, ובכל פעם נבדק על קפל אחר. נבחר הצירוף עם ה-F1 הממוצע הגבוה ביותר. אחר כך המודל אומן מחדש על כל נתוני האימון ונבדק פעם אחת על נתוני המבחן. כל שאר הלשוניות מציגות את המודלים אחרי הכוונון.</p>
+    <div class="verdict-box" id="tune-verdict"></div>
+    <div class="card table-card chg-card">
+      <h3>השפעת הכוונון על Recall, Precision ו-F1 Score</h3>
+      <p class="sub">נתוני המבחן (2,000 לקוחות) · לפני = פרמטרים מקוריים, אחרי = הפרמטרים מ-GridSearchCV</p>
+      <div class="chg-legend"><span><i class="b"></i>פס בהיר = לפני</span><span><i></i>פס מלא = אחרי</span><span class="up">▲ עלייה</span><span class="down">▼ ירידה</span></div>
+      <table id="t-change"></table>
+    </div>
+    <div class="grid2" style="margin-top:16px">
+      <div class="card">
+        <h3>F1 ב-Cross-Validation: לפני ואחרי</h3>
+        <p class="sub">ממוצע של 5 קפלים · הקו האנכי מראה ± סטיית תקן</p>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="sw lgbm"></i>LightGBM</span><span><i class="sw cat"></i>CatBoost</span><span><i class="sw ghost"></i>בהיר = לפני · מלא = אחרי</span></div>
+        <div class="chart" id="c-cv"></div>
+      </div>
+      <div class="card">
+        <h3>נתוני המבחן: לפני ואחרי הכוונון</h3>
+        <p class="sub">עיגול ריק = פרמטרים מקוריים · עיגול מלא = אחרי כוונון</p>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="sw xgb"></i>XGBoost</span><span><i class="sw lgbm"></i>LightGBM</span><span><i class="sw cat"></i>CatBoost</span></div>
+        <div class="chart" id="c-dumb"></div>
+      </div>
+    </div>
+    <div class="card table-card">
+      <h3>הפרמטרים שנבדקו והערכים שנבחרו</h3>
+      <p class="sub">הערך שנבחר מודגש</p>
+      <table id="t-params"></table>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-steps" role="tabpanel" hidden>
+    <p class="panel-intro">כל השלבים שבוצעו, מהקובץ הגולמי ועד למדדים הסופיים, לפי הסדר. לחצו על "הצג קוד" כדי לראות את הקוד של כל שלב.</p>
+    <nav class="stepper" id="stepper"></nav>
+    <div class="steps">
+
+      <div class="phase">א · עיבוד הנתונים (לפני החלוקה)</div>
+
+      <div class="step" id="s1"><div class="step-line"><div class="step-num">1</div></div><div class="card">
+        <h3>טעינת הנתונים ובדיקת איכות</h3>
+        <p>קריאת הקובץ <span class="ltr">churn_modelling.csv</span> ובדיקה שאין ערכים חסרים ושורות כפולות. התוצאה: הנתונים נקיים, ואין צורך להשלים או למחוק שורות.</p>
+        <div class="facts" id="f1"></div>
+        <details><summary>הצג קוד</summary><pre><code>df = pd.read_csv("churn_modelling.csv")
+df.shape                   # (10000, 13)
+df.isna().sum().sum()      # 0 missing values
+df.duplicated().sum()      # 0 duplicate rows
+df["Exited"].mean()        # 0.204 churn rate</code></pre></details>
+      </div></div>
+
+      <div class="step" id="s2"><div class="step-line"><div class="step-num">2</div></div><div class="card">
+        <h3>בחירת המשתנים</h3>
+        <p>משתנה המטרה הוא <span class="ltr">Exited</span> (1 = הלקוח עזב). הוסרו <span class="ltr">CustomerId</span> ו-<span class="ltr">Surname</span>: הם מזהים לקוח ואין בהם מידע על התנהגות, ומודל שלומד מהם עלול "לשנן" לקוחות במקום ללמוד דפוסים. נשארו 10 משתנים מסבירים.</p>
+        <div class="facts" id="f2"></div>
+        <details><summary>הצג קוד</summary><pre><code>data = df.drop(columns=["CustomerId", "Surname"])</code></pre></details>
+      </div></div>
+
+      <div class="step" id="s3"><div class="step-line"><div class="step-num">3</div></div><div class="card">
+        <h3>קידוד משתנים קטגוריים (One-Hot Encoding)</h3>
+        <p>מודלים עובדים רק עם מספרים, ולכן <span class="ltr">Geography</span> ו-<span class="ltr">Gender</span> הומרו לעמודות 0/1. <span class="ltr">drop_first=True</span> מוריד קטגוריה אחת בכל משתנה, כי אפשר להסיק אותה מהשאר (למשל: לא גרמניה ולא ספרד = צרפת). הקידוד לא "לומד" שום דבר מהנתונים, כי כל שורה מקודדת לפי הערך שלה בלבד. לכן בטוח לבצע אותו לפני החלוקה.</p>
+        <div class="transform" id="enc-transform"></div>
+        <details><summary>הצג קוד</summary><pre><code>data = pd.get_dummies(data, columns=["Geography", "Gender"],
+                      drop_first=True, dtype=int)
+X = data.drop(columns=["Exited"])
+y = data["Exited"]</code></pre></details>
+      </div></div>
+
+      <div class="phase">ב · חלוקה לאימון ולמבחן</div>
+
+      <div class="step" id="s4"><div class="step-line"><div class="step-num">4</div></div><div class="card">
+        <h3>חלוקה לאימון ולמבחן</h3>
+        <p>חלוקה אקראית של הנתונים המעובדים: 80% לאימון ו-20% למבחן. החלוקה <b>מרובדת</b> (<span class="ltr">stratify=y</span>), כך ששיעור העוזבים זהה בשתי הקבוצות. נתוני המבחן נשמרים בצד, ומשמשים רק בשלב האחרון.</p>
+        <div class="split"><div class="tr" id="split-tr"></div><div class="te" id="split-te"></div></div>
+        <div class="facts" id="f3"></div>
+        <details><summary>הצג קוד</summary><pre><code>X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y)</code></pre></details>
+      </div></div>
+
+      <div class="phase">ג · בניית המודל (על נתוני האימון בלבד)</div>
+
+      <div class="step" id="s5"><div class="step-line"><div class="step-num">5</div></div><div class="card">
+        <h3>נרמול המשתנים המספריים (StandardScaler)</h3>
+        <p>8 המשתנים המספריים עוברים נרמול לממוצע 0 וסטיית תקן 1, כדי שמשתנה עם ערכים גדולים, כמו יתרה, לא ישלוט ברגרסיה הלוגיסטית. <b>הנרמול בא אחרי החלוקה בכוונה:</b> הוא מחשב ממוצע וסטיית תקן, ואם היה מחושב על כל הנתונים, מידע מנתוני המבחן היה "דולף" לאימון (data leakage). לכן הוא נמצא בתוך ה-<span class="ltr">Pipeline</span> ונלמד מנתוני האימון בלבד. בתוך ה-Cross-Validation הוא נלמד בכל פעם רק מקפלי האימון.</p>
+        <div class="transform" id="scale-transform"></div>
+        <details><summary>הצג קוד</summary><pre><code>prep = ColumnTransformer([("num", StandardScaler(), num_cols)],
+                         remainder="passthrough")   # 0/1 columns stay as is
+model = Pipeline([("prep", prep), ("clf", classifier)])
+model.fit(X_train, y_train)   # the scaler learns mean/std from X_train only</code></pre></details>
+      </div></div>
+
+      <div class="step" id="s6"><div class="step-line"><div class="step-num">6</div></div><div class="card">
+        <h3>בחירת היפר-פרמטרים: <span class="ltr">GridSearchCV + 5-Fold Cross-Validation</span></h3>
+        <p>לכל מודל נבדקו כל צירופי הפרמטרים ברשת. נתוני האימון חולקו ל-5 קפלים. כל צירוף אומן 5 פעמים על 4 קפלים ונבדק על הקפל החמישי, ונבחר הצירוף עם ה-F1 הממוצע הגבוה ביותר. נתוני המבחן לא השתתפו בבחירה. הפירוט המלא נמצא בלשונית 4.</p>
+        <div class="facts" id="f6"></div>
+        <div style="overflow-x:auto"><table id="t-steps-params"></table></div>
+        <details><summary>הצג קוד</summary><pre><code>cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+gs = GridSearchCV(Pipeline([("prep", prep), ("clf", RandomForestClassifier(...))]),
+                  param_grid={"clf__max_depth": [None, 6, 10, 14],
+                              "clf__min_samples_leaf": [1, 3, 5],
+                              "clf__max_features": ["sqrt", 0.5],
+                              "clf__class_weight": [None, "balanced_subsample"]},
+                  scoring="f1", cv=cv, n_jobs=-1)
+gs.fit(X_train, y_train)
+gs.best_params_, gs.best_score_</code></pre></details>
+      </div></div>
+
+      <div class="step" id="s7"><div class="step-line"><div class="step-num">7</div></div><div class="card">
+        <h3>אימון המודלים הסופיים</h3>
+        <p>כל מודל אומן מחדש על כל 8,000 לקוחות האימון, עם הפרמטרים שנבחרו בשלב 6.</p>
+        <details open><summary>המודלים הסופיים</summary><pre><code id="final-code"></code></pre></details>
+      </div></div>
+
+      <div class="step" id="s8"><div class="step-line"><div class="step-num">8</div></div><div class="card">
+        <h3>הערכה על נתוני המבחן וקבלת המדדים</h3>
+        <p>כל מודל חזה את 2,000 לקוחות המבחן, שהוא לא ראה אף פעם. לקוח מסווג כ"עוזב" כשההסתברות שהמודל חוזה לו היא 0.5 ומעלה. מתוך מטריצת הבלבול מחושבים המדדים: <span class="ltr">Recall = TP / (TP + FN)</span>, <span class="ltr">Precision = TP / (TP + FP)</span>, ו-F1 הוא הממוצע ההרמוני של שניהם.</p>
+        <div class="cms" id="cms"></div>
+        <div style="overflow-x:auto;margin-top:12px"><table id="t-steps-metrics"></table></div>
+        <details><summary>הצג קוד</summary><pre><code>pred  = model.predict(X_test)                # threshold 0.5
+proba = model.predict_proba(X_test)[:, 1]
+confusion_matrix(y_test, pred)
+recall_score(y_test, pred), precision_score(y_test, pred)
+f1_score(y_test, pred), roc_auc_score(y_test, proba)</code></pre></details>
+      </div></div>
+
+    </div>
+  </section>
+
+  <footer>נתונים: churn_modelling.csv (10,000 לקוחות) · חלוקה אקראית 80/20 מרובדת, random_state=42 · כוונון: <span class="ltr">GridSearchCV + 5-Fold CV</span> · scikit-learn, XGBoost, LightGBM, CatBoost · הקובץ data.js נוצר על ידי train_model.py</footer>
 </div>
 <div id="tip" hidden></div>
 
@@ -240,11 +437,18 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
     { key: "lr", name: "Logistic Regression" },
     { key: "rf", name: "Random Forest" },
     { key: "xgb", name: "XGBoost" },
+    { key: "lgbm", name: "LightGBM" },
+    { key: "cat", name: "CatBoost" },
   ];
-  const SHORT = { lr: "LR", rf: "RF", xgb: "XGB" };
-  const NAME = { lr: "Logistic Regression", rf: "Random Forest", xgb: "XGBoost" };
+  const SHORT = { lr: "LR", rf: "RF", xgb: "XGB", lgbm: "LGBM", cat: "CAT" };
+  const NAME = Object.fromEntries(MODELS.map(m => [m.key, m.name]));
   // best model for a metric (higher or lower is better)
-  const bestOf = (k, higher = true) => MODELS.map(m => m.key).reduce((a, b) => (higher ? M[b].metrics[k] > M[a].metrics[k] : M[b].metrics[k] < M[a].metrics[k]) ? b : a);
+  const bestOf = (k, higher = true) => {
+    const vals = MODELS.map(m => +M[m.key].metrics[k].toFixed(3));
+    const target = higher ? Math.max(...vals) : Math.min(...vals);
+    return MODELS.filter((m, i) => vals[i] === target).map(m => m.key);
+  };
+  const names = keys => keys.length > 1 ? "תיקו: " + keys.map(k => NAME[k]).join(" ו-") : NAME[keys[0]] + " עדיף";
   const FEAT = {
     Age: "גיל", Geography_Germany: "מדינה: גרמניה", IsActiveMember: "לקוח פעיל", Gender_Male: "מגדר: גבר",
     Balance: "יתרה בחשבון", NumOfProducts: "מספר מוצרים", CreditScore: "דירוג אשראי",
@@ -282,10 +486,10 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
   document.getElementById("kpis").innerHTML = KPIS.map(([k, name, hint, higher]) => {
     const best = bestOf(k, higher);
     const row = key =>
-      `<div class="row ${key === best ? "win" : ""}"><span class="who"><i class="sw ${key}"></i>${SHORT[key]}</span><span class="val num ltr">${f3(M[key].metrics[k])}</span></div>`;
+      `<div class="row ${best.includes(key) ? "win" : ""}"><span class="who"><i class="sw ${key}"></i>${SHORT[key]}</span><span class="val num ltr">${f3(M[key].metrics[k])}</span></div>`;
     return `<div class="kpi"><div class="k-name ltr">${name}</div><div class="k-hint">${hint.split(" · ")[0]}</div><div class="k-dir">${hint.split(" · ")[1]}</div>
       ${MODELS.map(m => row(m.key)).join("")}
-      <div class="verdict">✓ ${NAME[best]} עדיף</div></div>`;
+      <div class="verdict">✓ ${names(best)}</div></div>`;
   }).join("");
 
   // ---------- metrics table ----------
@@ -303,13 +507,14 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
   // ---------- criteria comparison table ----------
   const tprAt = (roc, v) => { let t = 0; for (const [a, b] of roc) { if (a <= v) t = b; else break; } return t; };
   // ROC: in what share of the FPR range each model's curve is the highest
-  const rocTop = { lr: 0, rf: 0, xgb: 0 }; let n = 0;
+  const rocTop = Object.fromEntries(MODELS.map(m => [m.key, 0])); let n = 0;
   for (let v = 0.01; v < 1; v += 0.01) {
     n++;
     const t = MODELS.map(m => tprAt(M[m.key].roc, v)), mx = Math.max(...t);
     MODELS.forEach((m, i) => { if (t[i] === mx) rocTop[m.key]++; });
   }
-  const rocBest = MODELS.map(m => m.key).reduce((a, b) => rocTop[b] > rocTop[a] ? b : a);
+  const rocMax = Math.max(...MODELS.map(m => rocTop[m.key]));
+  const rocBest = MODELS.filter(m => rocTop[m.key] === rocMax).map(m => m.key);
   const metricRow = (name, what, k) => ({ name, what, best: bestOf(k), val: key => f3(M[key].metrics[k]) });
   const CRIT = [
     metricRow("Recall", "איזה חלק מהעוזבים בפועל המודל זיהה", "recall"),
@@ -319,18 +524,18 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
       best: rocBest, val: key => `הגבוהה ביותר ב-${Math.round(rocTop[key] / n * 100)}% מהטווח` },
     metricRow("AUC", "השטח מתחת לעקומת ה-ROC (0.5 = ניחוש, 1 = מושלם)", "auc"),
   ];
-  const wins = { lr: 0, rf: 0, xgb: 0 };
+  const wins = Object.fromEntries(MODELS.map(m => [m.key, 0]));
   document.getElementById("t-criteria").innerHTML =
     `<thead><tr><th>קריטריון</th>${MODELS.map(m => `<th class="num"><i class="sw ${m.key}"></i> ${m.name}</th>`).join("")}<th>המודל העדיף</th></tr></thead><tbody>` +
     CRIT.map(c => {
-      wins[c.best]++;
+      c.best.forEach(k => wins[k]++);
       return `<tr><td><div class="crit ltr">${c.name}</div><div class="what">${c.what}</div></td>` +
-        MODELS.map(m => `<td class="num ${m.key === c.best ? "best" : ""}">${c.val(m.key)}</td>`).join("") +
-        `<td class="win-cell">✓ ${NAME[c.best]}</td></tr>`;
+        MODELS.map(m => `<td class="num ${c.best.includes(m.key) ? "best" : ""}">${c.val(m.key)}</td>`).join("") +
+        `<td class="win-cell">✓ ${c.best.length > 1 ? "תיקו: " + c.best.map(k => NAME[k]).join(" ו-") : NAME[c.best[0]]}</td></tr>`;
     }).join("") + "</tbody>";
   const champ = MODELS.map(m => m.key).reduce((a, b) => wins[b] > wins[a] ? b : a);
   document.getElementById("verdict").innerHTML =
-    `<b>${NAME[champ]} עדיף ב-${wins[champ]} מתוך ${CRIT.length} הקריטריונים.</b> ` +
+    `<b>${NAME[champ]} עדיף (או בתיקו) ב-${wins[champ]} מתוך ${CRIT.length} הקריטריונים.</b> ` +
     `לקוחות שעזבו וזוהו (מתוך ${M.lr.confusion.tp + M.lr.confusion.fn}): ` +
     MODELS.map(m => `<span class="ltr">${m.name} <b>${M[m.key].confusion.tp}</b></span>`).join(" · ") + ".";
   document.getElementById("auc-legend").innerHTML = MODELS.map(m => `<span><i class="sw ${m.key}"></i><span class="ltr">AUC <b class="num">${f3(M[m.key].metrics.auc)}</b></span></span>`).join("");
@@ -406,7 +611,7 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
     const cats = [["recall", "Recall"], ["precision", "Precision"], ["f1", "F1 Score"], ["auc", "ROC AUC"]];
     const y = lin(0, 1, f.y0, f.y1);
     yGrid(f, y, [0, .2, .4, .6, .8, 1], v => v.toFixed(1));
-    const band = f.iw / cats.length, bw = Math.min(34, band * 0.26), gap = 2, groupW = MODELS.length * bw + (MODELS.length - 1) * gap;
+    const gap = 2, band = f.iw / cats.length, bw = Math.min(26, (band * 0.84 - (MODELS.length - 1) * gap) / MODELS.length), groupW = MODELS.length * bw + (MODELS.length - 1) * gap;
     cats.forEach(([k, label], i) => {
       const cx = f.x0 + band * i + band / 2;
       txt(f.svg, cx, f.y0 + 18, label, "tick");
@@ -414,7 +619,7 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
         const v = M[mo.key].metrics[k];
         const x = cx - groupW / 2 + j * (bw + gap);
         const bar = el("path", { d: barV(x, y(v), bw, f.y0 - y(v), 4), class: "bar f-" + mo.key }, f.svg);
-        txt(f.svg, x + bw / 2, y(v) - 6, v.toFixed(2), "val-label");
+        if (bestOf(k).includes(mo.key)) txt(f.svg, x + bw / 2, y(v) - 6, v.toFixed(2), "val-label");
         const hit = el("rect", { x: x - 1, y: f.y1, width: bw + 2, height: f.ih, class: "hit" }, f.svg);
         hit.addEventListener("mousemove", e => showTip(e, `<div class="t-h ltr">${label}</div>${tRow(mo.key, mo.name, f3(v))}`));
         hit.addEventListener("mouseleave", hideTip);
@@ -503,7 +708,7 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
   function drawImp() {
     const avg = ft => MODELS.reduce((t, m) => t + M[m.key].importance[ft], 0);
     const feats = Object.keys(M.rf.importance).sort((a, b) => avg(b) - avg(a));
-    const rowH = 40, bh = 10, gap = 2;
+    const bh = 7, gap = 2, rowH = MODELS.length * (bh + gap) + 14;
     const f = frame("c-imp", feats.length * rowH + 70, { t: 10, r: 24, b: 56, l: 140 });
     const maxV = Math.max(...MODELS.flatMap(mo => Object.values(M[mo.key].importance)));
     const top = Math.ceil(maxV * 20) / 20;
@@ -527,13 +732,188 @@ footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
     txt(f.svg, f.x0 + f.iw / 2, f.H - 8, "חלק מסך החשיבות במודל (%)", "axis-title");
     const top3 = key => Object.keys(M[key].importance).sort((a, b) => M[key].importance[b] - M[key].importance[a]).slice(0, 3).map(ft => FEAT[ft]).join(", ");
     document.getElementById("imp-note").textContent =
-      `שלושת המשתנים החשובים ביותר. XGBoost: ${top3("xgb")}. Random Forest: ${top3("rf")}. רגרסיה לוגיסטית: ${top3("lr")}. ` +
-      "הגיל חשוב בכל המודלים. XGBoost והרגרסיה הלוגיסטית מדגישים גם לקוח פעיל ומדינה. Random Forest נותן משקל גבוה למשתנים רציפים כמו שכר ודירוג אשראי, " +
-      "בין היתר כי יש להם הרבה ערכים שונים לפצל לפיהם.";
+      "שלושת המשתנים החשובים ביותר בכל מודל. " + MODELS.map(m => `${m.name}: ${top3(m.key)}.`).join(" ") + " " +
+      "הגיל חשוב בכל המודלים. שימו לב: חשיבות ב-Random Forest למשתנים רציפים (כמו שכר) יכולה לנבוע גם מכך שיש להם הרבה ערכים שונים לפצל לפיהם.";
   }
 
+  // ---------- tab 4: tuning ----------
+  const fmtV = v => v === null ? "None" : String(v);
+  const delta = (a, b) => { const d = b - a; return `<span class="${d >= 0 ? "up" : "down"} ltr">${d >= 0 ? "+" : "−"}${Math.abs(d).toFixed(3)}</span>`; };
+  document.getElementById("t-params").innerHTML =
+    `<thead><tr><th>מודל</th><th>פרמטרים שנבדקו</th><th class="num">צירופים</th><th class="num">F1 ב-CV לפני</th><th class="num">F1 ב-CV אחרי</th><th class="num">F1 במבחן לפני</th><th class="num">F1 במבחן אחרי</th></tr></thead><tbody>` +
+    MODELS.map(m => {
+      const T = M[m.key].tuning;
+      const params = Object.entries(T.grid).map(([name, vals]) =>
+        `<div class="ltr"><span>${name}:</span> <span class="pv">${vals.map(v => fmtV(v) === fmtV(T.best_params[name]) ? `<b>${fmtV(v)}</b>` : fmtV(v)).join(", ")}</span></div>`).join("");
+      const cvA = T.cv_default.f1, cvB = T.cv_best.f1;
+      return `<tr><td><i class="sw ${m.key}"></i> ${m.name}</td><td><div class="param-list">${params}</div></td>
+        <td class="num">${T.n_combos} <span class="what">(${T.n_fits} אימונים)</span></td>
+        <td class="num ltr">${f3(cvA.mean)} ± ${cvA.std.toFixed(3)}</td>
+        <td class="num ltr"><b>${f3(cvB.mean)}</b> ± ${cvB.std.toFixed(3)}</td>
+        <td class="num ltr">${f3(M[m.key].default_test.f1)}</td>
+        <td class="num"><b class="ltr">${f3(M[m.key].metrics.f1)}</b> ${delta(M[m.key].default_test.f1, M[m.key].metrics.f1)}</td></tr>`;
+    }).join("") + "</tbody>";
+  document.getElementById("tune-verdict").innerHTML =
+    "<b>F1 במבחן לפני ← אחרי הכוונון:</b> " +
+    MODELS.map(m => `<span class="ltr">${m.name} ${f3(M[m.key].default_test.f1)} → <b>${f3(M[m.key].metrics.f1)}</b></span>`).join(" · ") +
+    ". השיפור הגדול ביותר הוא ב-Recall: המודלים מזהים עכשיו הרבה יותר לקוחות שעוזבים. המחיר: ה-Precision ירד, כלומר יש יותר התראות שווא. " + (() => {
+      const weighted = MODELS.filter(m => Object.entries(M[m.key].tuning.best_params).some(([k, v]) =>
+        /class_weight|scale_pos_weight|auto_class_weights/.test(k) && v !== null && v !== 1 && v !== "None"));
+      return weighted.length === MODELS.length ? "בכל המודלים החיפוש בחר לתת משקל גבוה יותר ללקוחות שעוזבים."
+        : `החיפוש בחר לתת משקל גבוה יותר ללקוחות שעוזבים ב-${weighted.map(m => m.name).join(", ")}.`;
+    })();
+
+  // before/after table for Recall, Precision, F1
+  (function () {
+    const mets = [["recall", "Recall", "כמה מהעוזבים זוהו"], ["precision", "Precision", "דיוק ההתראות"], ["f1", "F1 Score", "האיזון בין השניים"]];
+    const bar = (cls, key, v) => `<div class="track"><div class="fill ${cls} f-${key}" style="width:${(v * 100).toFixed(1)}%;background:var(--${key})"></div></div>`;
+    document.getElementById("t-change").innerHTML =
+      `<thead><tr><th>מודל</th><th>מדד</th><th class="num">לפני</th><th class="num">אחרי</th><th class="num">שינוי</th><th>לפני מול אחרי</th></tr></thead><tbody>` +
+      MODELS.map(m => mets.map(([k, label, hint], i) => {
+        const a = M[m.key].default_test[k], b = M[m.key].metrics[k], d = b - a;
+        const rel = a > 0 ? Math.round(d / a * 100) : 0;
+        const deltaCell = `<span class="${d >= 0 ? "up" : "down"}">${d >= 0 ? "▲" : "▼"} <span class="ltr">${d >= 0 ? "+" : "−"}${Math.abs(d).toFixed(3)}</span></span> <span class="pct ltr">(${rel >= 0 ? "+" : "−"}${Math.abs(rel)}%)</span>`;
+        return `<tr class="${i === 0 ? "grp-start" : ""}">` +
+          (i === 0 ? `<td class="model-cell" rowspan="${mets.length}"><i class="sw ${m.key}"></i> ${m.name}</td>` : "") +
+          `<td><div class="crit ltr">${label}</div><div class="what">${hint}</div></td>` +
+          `<td class="num ltr">${f3(a)}</td><td class="num ltr after">${f3(b)}</td>` +
+          `<td class="num delta">${deltaCell}</td>` +
+          `<td><div class="mini">${bar("before", m.key, a)}${bar("after", m.key, b)}</div></td></tr>`;
+      }).join("")).join("") + "</tbody>";
+  })();
+
+  function drawCv() {
+    const f = frame("c-cv", 340, { t: 22, r: 12, b: 56, l: 52 });
+    const y = lin(0, 0.8, f.y0, f.y1);
+    yGrid(f, y, [0, .2, .4, .6, .8], v => v.toFixed(1));
+    const band = f.iw / MODELS.length, bw = Math.min(46, band * 0.34), gap = 3;
+    MODELS.forEach((mo, i) => {
+      const cx = f.x0 + band * i + band / 2;
+      txt(f.svg, cx, f.y0 + 18, MODELS.length > 3 ? SHORT[mo.key] : mo.name, "tick");
+      const T = M[mo.key].tuning;
+      [["לפני", T.cv_default.f1, true], ["אחרי", T.cv_best.f1, false]].forEach(([lab, v, ghost], j) => {
+        const x = j === 0 ? cx - gap / 2 - bw : cx + gap / 2;
+        el("path", { d: barV(x, y(v.mean), bw, f.y0 - y(v.mean), 4), class: "f-" + mo.key + (ghost ? " ghost-bar" : "") }, f.svg);
+        const xm = x + bw / 2;
+        el("line", { x1: xm, x2: xm, y1: y(v.mean + v.std), y2: y(Math.max(0, v.mean - v.std)), class: "err-l" }, f.svg);
+        el("line", { x1: xm - 5, x2: xm + 5, y1: y(v.mean + v.std), y2: y(v.mean + v.std), class: "err-l" }, f.svg);
+        if (!ghost) txt(f.svg, xm, y(v.mean + v.std) - 6, v.mean.toFixed(2), "val-label");
+        const hit = el("rect", { x: x - 1, y: f.y1, width: bw + 2, height: f.ih, class: "hit" }, f.svg);
+        hit.addEventListener("mousemove", e => showTip(e, `<div class="t-h">${mo.name} · ${lab} הכוונון</div>` +
+          tRow(mo.key, "F1 ממוצע", f3(v.mean)) + tRow(mo.key, "סטיית תקן", v.std.toFixed(3))));
+        hit.addEventListener("mouseleave", hideTip);
+      });
+    });
+    axisTitles(f, "מודל (בהיר = לפני, מלא = אחרי)", "F1 ממוצע ב-5 קפלים");
+  }
+
+  function drawDumb() {
+    const mets = [["recall", "Recall"], ["precision", "Precision"], ["f1", "F1"], ["auc", "AUC"]];
+    const rowH = 22, grpGap = 16;
+    const H = MODELS.length * (mets.length * rowH + grpGap) + 70;
+    const f = frame("c-dumb", H, { t: 8, r: 20, b: 56, l: 92 });
+    const x = lin(0, 1, f.x0, f.x1);
+    [0, .2, .4, .6, .8, 1].forEach(v => { el("line", { x1: x(v), x2: x(v), y1: f.y1, y2: f.y0, class: "grid-l" }, f.svg); txt(f.svg, x(v), f.y0 + 18, v.toFixed(1), "tick"); });
+    let yy = f.y1;
+    MODELS.forEach(mo => {
+      txt(f.svg, 4, yy + 10, SHORT[mo.key], "grp-label", "start");
+      mets.forEach(([k, label]) => {
+        const cy = yy + rowH / 2 + 2;
+        const a = M[mo.key].default_test[k], b = M[mo.key].metrics[k];
+        txt(f.svg, f.x0 - 10, cy + 4, label, "tick", "end");
+        el("line", { x1: x(a), x2: x(b), y1: cy, y2: cy, class: "dumb-l" }, f.svg);
+        el("circle", { cx: x(a), cy, r: 5, class: "hollow s-" + mo.key }, f.svg);
+        el("circle", { cx: x(b), cy, r: 5, class: "dot f-" + mo.key }, f.svg);
+        const hit = el("rect", { x: 0, y: cy - rowH / 2, width: f.W, height: rowH, class: "hit" }, f.svg);
+        hit.addEventListener("mousemove", e => showTip(e, `<div class="t-h">${mo.name} · ${label}</div>` +
+          tRow(mo.key, "לפני", f3(a)) + tRow(mo.key, "אחרי", f3(b))));
+        hit.addEventListener("mouseleave", hideTip);
+        yy += rowH;
+      });
+      yy += grpGap;
+    });
+    el("line", { x1: f.x0, x2: f.x1, y1: f.y0, y2: f.y0, class: "base-l" }, f.svg);
+    txt(f.svg, f.x0 + f.iw / 2, f.H - 8, "ציון בנתוני המבחן (0 עד 1)", "axis-title");
+  }
+
+  // ---------- tab 5: process steps ----------
+  (function () {
+    const P = D.pipeline;
+    const fact = (label, val) => `<span class="fact">${label}: <b class="num">${val}</b></span>`;
+    const titles = ["טעינת נתונים", "בחירת משתנים", "קידוד קטגוריות", "חלוקה 80/20", "נרמול", "כוונון היפר-פרמטרים", "אימון סופי", "הערכה ומדדים"];
+    document.getElementById("stepper").innerHTML = titles.map((t, i) =>
+      `<a href="#s${i + 1}" data-step="s${i + 1}"><b>${i + 1}</b>${t}</a>`).join('<span class="arr">←</span>');
+    document.querySelectorAll("#stepper a").forEach(a => a.onclick = e => {
+      e.preventDefault(); document.getElementById(a.dataset.step).scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    document.getElementById("f1").innerHTML = fact("שורות", P.n_rows.toLocaleString()) + fact("עמודות", P.n_cols) +
+      fact("ערכים חסרים", P.missing) + fact("שורות כפולות", P.duplicates) + fact("שיעור עזיבה", pct(D.churn_rate));
+    document.getElementById("f2").innerHTML = fact("משתנה מטרה", `<span class="ltr">${P.target}</span>`) +
+      fact("הוסרו", `<span class="ltr">${P.dropped.join(", ")}</span>`) +
+      fact("משתנים מספריים", P.num_cols.length) + fact("משתנים קטגוריים", Object.keys(P.cat_cols).length);
+    document.getElementById("split-tr").textContent = `Train 80% · ${D.n_train.toLocaleString()}`;
+    document.getElementById("split-te").textContent = `Test 20% · ${D.n_test.toLocaleString()}`;
+    document.getElementById("f3").innerHTML = fact("עוזבים באימון", `${P.train_churners.toLocaleString()} (${pct(P.train_churn)})`) +
+      fact("עוזבים במבחן", `${P.test_churners} (${pct(P.test_churn)})`) + fact("לקוחות שמופיעים בשתי הקבוצות", P.overlap_ids) +
+      fact("random_state", 42);
+
+    const tags = (arr, cls) => arr.map(c => `<span class="tag ${cls || ""}">${c}</span>`).join("");
+    const catIn = Object.entries(P.cat_cols).map(([c, v]) => `<span class="tag cat">${c} (${v.join(" / ")})</span>`).join("");
+    const catOut = P.features_out.filter(f => !P.num_cols.includes(f));
+    document.getElementById("enc-transform").innerHTML =
+      `<div class="col"><h4>לפני: ${P.n_features_in} משתנים</h4>${tags(P.num_cols)}${catIn}</div>
+       <div class="arrow">←</div>
+       <div class="col"><h4>אחרי: ${P.features_out.length} עמודות</h4>${tags(P.num_cols)}<div>${tags(catOut, "cat")}</div>
+         <div class="what" style="margin-top:6px">כתום = עמודות 0/1 שנוצרו מהקידוד</div></div>`;
+    document.getElementById("scale-transform").innerHTML =
+      `<div class="col"><h4>נתוני האימון: ${P.features_out.length} עמודות</h4>${tags(P.num_cols)}<div>${tags(catOut, "cat")}</div></div>
+       <div class="arrow">←</div>
+       <div class="col"><h4>אחרי נרמול</h4>${tags(P.num_cols.map(c => c + " (z)"))}<div>${tags(catOut, "cat")}</div>
+         <div class="what" style="margin-top:6px">(z) = ממוצע 0, סטיית תקן 1 · עמודות ה-0/1 נשארות כמו שהן</div></div>`;
+
+    const totalCombos = MODELS.reduce((t, m) => t + M[m.key].tuning.n_combos, 0);
+    document.getElementById("f6").innerHTML = fact("קפלים", D.cv_folds) + fact("מדד לבחירה", "F1") +
+      fact("צירופים שנבדקו", totalCombos) + fact("אימונים", (totalCombos * D.cv_folds).toLocaleString());
+    const fmt = v => v === null ? "None" : String(v);
+    document.getElementById("t-steps-params").innerHTML =
+      `<thead><tr><th>מודל</th><th>הפרמטרים שנבחרו</th><th class="num">צירופים</th><th class="num">F1 ב-CV (ממוצע ± סטיית תקן)</th></tr></thead><tbody>` +
+      MODELS.map(m => { const T = M[m.key].tuning; return `<tr><td><i class="sw ${m.key}"></i> ${m.name}</td>
+        <td class="ltr" style="text-align:left">${Object.entries(T.best_params).map(([k, v]) => `${k}=<b>${fmt(v)}</b>`).join(", ")}</td>
+        <td class="num">${T.n_combos}</td><td class="num ltr">${f3(T.cv_best.f1.mean)} ± ${T.cv_best.f1.std.toFixed(3)}</td></tr>`; }).join("") + "</tbody>";
+
+    const py = v => v === null ? "None" : typeof v === "string" ? `"${v}"` : String(v);
+    const args = key => Object.entries(M[key].tuning.best_params).map(([k, v]) => `    ${k}=${py(v)},`).join("\n");
+    document.getElementById("final-code").textContent =
+      `LogisticRegression(\n    solver="liblinear", max_iter=2000,\n${args("lr")}\n)\n\n` +
+      `RandomForestClassifier(\n    n_estimators=300, random_state=42,\n${args("rf")}\n)\n\n` +
+      `XGBClassifier(\n    random_state=42, n_jobs=1,\n${args("xgb")}\n)\n\n` +
+      `LGBMClassifier(\n    random_state=42, verbose=-1, n_jobs=1,\n${args("lgbm")}\n)\n\n` +
+      `CatBoostClassifier(\n    random_seed=42, verbose=0,\n${args("cat")}\n)\n\n` +
+      `model = Pipeline([("prep", prep), ("clf", ...)]).fit(X_train, y_train)`;
+
+    const cell = (key, n, total, label, sub) => {
+      const share = Math.round(n / total * 100);
+      return `<div class="c" style="background:color-mix(in srgb, var(--${key}) ${Math.round(12 + share * 0.5)}%, var(--surface))"><b class="num">${n.toLocaleString()}</b><span>${label}</span></div>`;
+    };
+    document.getElementById("cms").innerHTML = MODELS.map(m => {
+      const c = M[m.key].confusion, tot = c.tn + c.fp + c.fn + c.tp;
+      return `<div class="cm"><h4><i class="sw ${m.key}"></i>${m.name}</h4><div class="cm-grid">
+        <div></div><div class="h">חזוי: נשאר</div><div class="h">חזוי: עזב</div>
+        <div class="rh">בפועל: נשאר</div>${cell(m.key, c.tn, tot, "TN · נכון")}${cell(m.key, c.fp, tot, "FP · התראת שווא")}
+        <div class="rh">בפועל: עזב</div>${cell(m.key, c.fn, tot, "FN · פספוס")}${cell(m.key, c.tp, tot, "TP · זוהה")}
+      </div></div>`;
+    }).join("");
+
+    const mrow = [["Recall", "recall"], ["Precision", "precision"], ["F1 Score", "f1"], ["ROC AUC", "auc"], ["Accuracy", "accuracy"]];
+    document.getElementById("t-steps-metrics").innerHTML =
+      `<thead><tr><th>מדד (נתוני המבחן)</th>${MODELS.map(m => `<th class="num"><i class="sw ${m.key}"></i> ${m.name}</th>`).join("")}</tr></thead><tbody>` +
+      mrow.map(([n, k]) => { const b = bestOf(k); return `<tr><td class="ltr" style="text-align:right">${n}</td>${MODELS.map(m =>
+        `<td class="num ltr" style="${b.includes(m.key) ? "font-weight:700" : "color:var(--ink-2)"}">${f3(M[m.key].metrics[k])}</td>`).join("")}</tr>`; }).join("") + "</tbody>";
+  })();
+
   // ---------- tabs ----------
-  const DRAW = { cls: [drawBars, drawRoc], pred: [drawCalib, drawResid], imp: [drawImp] };
+  const DRAW = { cls: [drawBars, drawRoc], pred: [drawCalib, drawResid], imp: [drawImp], tune: [drawCv, drawDumb], steps: [] };
   let current = "cls";
   function show(tab) {
     current = tab;
