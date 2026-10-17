@@ -1,4 +1,4 @@
-"""Train Logistic Regression and Random Forest on churn data and export results to data.js."""
+"""Train Logistic Regression, Random Forest and XGBoost on churn data and export results to data.js."""
 import json
 from pathlib import Path
 
@@ -12,6 +12,7 @@ from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score, mean_ab
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from xgboost import XGBClassifier
 
 HERE = Path(__file__).parent
 df = pd.read_csv(HERE / "churn_modelling.csv")
@@ -32,6 +33,7 @@ prep = ColumnTransformer([
 models = {
     "lr": Pipeline([("prep", prep), ("clf", LogisticRegression(max_iter=1000))]),
     "rf": Pipeline([("prep", prep), ("clf", RandomForestClassifier(n_estimators=300, random_state=42, n_jobs=-1))]),
+    "xgb": Pipeline([("prep", prep), ("clf", XGBClassifier(max_depth=4, learning_rate=0.1, n_estimators=100, random_state=42))]),
 }
 
 out = {"n_train": len(X_train), "n_test": len(X_test), "churn_rate": float(y.mean()), "models": {}}
@@ -52,8 +54,9 @@ for key, m in models.items():
 
     clf = m.named_steps["clf"]
     names = [n.split("__")[1] for n in m.named_steps["prep"].get_feature_names_out()]
-    raw = clf.feature_importances_ if key == "rf" else np.abs(clf.coef_[0])
-    share = raw / raw.sum()
+    # RF: Gini importance, XGBoost: gain importance, LR: |standardized coefficient|
+    raw = np.abs(clf.coef_[0]) if key == "lr" else clf.feature_importances_
+    share = np.asarray(raw, dtype=float) / np.sum(raw)
 
     out["models"][key] = {
         "metrics": {
