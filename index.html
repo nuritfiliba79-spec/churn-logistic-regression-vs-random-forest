@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Churn Model Comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f4f5f7;
+  --surface: #ffffff;
+  --ink: #14161a;
+  --ink-2: #4a4d55;
+  --muted: #80838b;
+  --grid: #e6e7eb;
+  --axis: #c3c5cc;
+  --border: rgba(20,22,26,0.08);
+  --shadow: 0 1px 2px rgba(20,22,26,.04), 0 4px 16px rgba(20,22,26,.05);
+  --lr: #2a78d6;   /* Logistic Regression - categorical slot 1 */
+  --rf: #eb6834;   /* Random Forest - categorical slot 2 */
+  --good: #0a8a0a;
+  --wash: #eef4fc;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7;
+    --muted: #8f8d86; --grid: #2c2c2a; --axis: #45453f; --border: rgba(255,255,255,0.08);
+    --shadow: none; --lr: #3987e5; --rf: #d95926; --good: #0ca30c; --wash: #16233a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7;
+  --muted: #8f8d86; --grid: #2c2c2a; --axis: #45453f; --border: rgba(255,255,255,0.08);
+  --shadow: none; --lr: #3987e5; --rf: #d95926; --good: #0ca30c; --wash: #16233a;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font-family: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px; line-height: 1.6;
+}
+.wrap { max-width: 1160px; margin: 0 auto; padding: 28px 16px 56px; }
+.ltr { direction: ltr; unicode-bidi: isolate; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* header */
+.top { display: flex; justify-content: space-between; align-items: start; gap: 12px; flex-wrap: wrap; }
+.eyebrow { color: var(--lr); font-weight: 600; font-size: .85rem; }
+h1 { margin: 2px 0 6px; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.25; font-weight: 700; }
+.lead { margin: 0; color: var(--ink-2); max-width: 72ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chip { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px 14px; font-size: .88rem; color: var(--ink-2); }
+.chip b { color: var(--ink); font-weight: 600; }
+.theme-btn { background: var(--surface); color: var(--ink-2); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: .88rem; cursor: pointer; }
+
+/* legend */
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: .9rem; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+.ref-sw { width: 18px; border-top: 2px dashed var(--muted); display: inline-block; }
+.sw.lr { background: var(--lr); } .sw.rf { background: var(--rf); }
+.page-legend { margin-top: 18px; }
+
+/* KPI row */
+.kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 14px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); }
+.kpi .k-name { font-weight: 600; font-size: .95rem; }
+.kpi .k-hint { color: var(--muted); font-size: .78rem; line-height: 1.35; min-height: 2.7em; }
+.kpi .k-dir { color: var(--ink-2); font-size: .78rem; font-weight: 500; }
+.kpi .row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; gap: 6px; }
+.kpi .row .who { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: .82rem; }
+.kpi .row .val { font-size: 1.35rem; font-weight: 700; }
+.kpi .row.win .val { color: var(--ink); }
+.kpi .row:not(.win) .val { color: var(--ink-2); font-weight: 500; font-size: 1.1rem; }
+.kpi .verdict { margin-top: 8px; font-size: .78rem; color: var(--good); font-weight: 600; }
+
+/* tabs */
+.tabs { display: flex; gap: 6px; margin-top: 28px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 16px; font: inherit; font-weight: 500; color: var(--ink-2); cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--lr); font-weight: 600; }
+.panel { padding-top: 18px; }
+.panel[hidden] { display: none; }
+.panel-intro { color: var(--ink-2); margin: 0 0 14px; max-width: 80ch; }
+
+/* cards */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 18px 12px; box-shadow: var(--shadow); min-width: 0; }
+.card h3 { margin: 0; font-size: 1.05rem; }
+.card .sub { margin: 2px 0 10px; color: var(--muted); font-size: .86rem; }
+.card .legend { margin-bottom: 6px; }
+.chart { width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.note { margin: 10px 0 4px; font-size: .88rem; color: var(--ink-2); background: var(--wash); border-radius: 10px; padding: 10px 12px; }
+
+/* svg */
+.grid-l { stroke: var(--grid); stroke-width: 1; }
+.base-l { stroke: var(--axis); stroke-width: 1; }
+.ref-l { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 5; fill: none; }
+.tick { fill: var(--muted); font-size: 12px; font-family: inherit; }
+.axis-title { fill: var(--ink-2); font-size: 13px; font-weight: 500; font-family: inherit; }
+.ref-label { fill: var(--muted); font-size: 12px; font-family: inherit; }
+.val-label { fill: var(--ink); font-size: 12px; font-weight: 600; font-family: inherit; }
+.cross { stroke: var(--axis); stroke-width: 1; }
+.hit { fill: transparent; cursor: crosshair; }
+.f-lr { fill: var(--lr); } .f-rf { fill: var(--rf); }
+.s-lr { stroke: var(--lr); } .s-rf { stroke: var(--rf); }
+.line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.dot { stroke: var(--surface); stroke-width: 2; }
+.bar.dim { opacity: .35; }
+
+/* tooltip */
+#tip { position: fixed; z-index: 10; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: .85rem; box-shadow: 0 6px 24px rgba(0,0,0,.14); max-width: 260px; }
+#tip .t-h { font-weight: 600; margin-bottom: 2px; }
+#tip .t-r { display: flex; align-items: center; gap: 7px; justify-content: space-between; }
+#tip .t-r span:first-child { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+
+/* table */
+table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--grid); }
+th { color: var(--ink-2); font-weight: 600; }
+td.num, th.num { text-align: left; }
+.table-card { margin-top: 16px; overflow-x: auto; }
+.verdict-box { background: var(--wash); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; font-size: 1rem; }
+.verdict-box b { font-weight: 700; }
+.cmp-card { margin-top: 14px; }
+.cmp-card td { vertical-align: top; }
+.cmp-card th { white-space: nowrap; }
+.cmp-card .crit { font-weight: 600; }
+.cmp-card .what { color: var(--muted); font-size: .84rem; }
+.cmp-card td.win-cell { color: var(--good); font-weight: 600; white-space: nowrap; }
+.cmp-card td.best { font-weight: 700; color: var(--ink); }
+.cmp-card td.num:not(.best) { color: var(--ink-2); }
+footer { margin-top: 36px; color: var(--muted); font-size: .85rem; }
+
+@media (max-width: 980px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .kpis { grid-template-columns: repeat(2, 1fr); } .tab { padding: 8px 10px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="eyebrow">חיזוי עזיבת לקוחות בנק · Churn Modelling</div>
+      <h1>השוואת מודלים: רגרסיה לוגיסטית מול Random Forest</h1>
+      <p class="lead">שני מודלים חוזים אילו לקוחות יעזבו את הבנק (<span class="ltr">Exited = 1</span>). כל המדדים מחושבים על 20% נתוני המבחן, שהמודלים לא ראו באימון.</p>
+      <div class="chips" id="chips"></div>
+    </div>
+    <button class="theme-btn" id="themeBtn" type="button">מצב כהה / בהיר</button>
+  </header>
+
+  <div class="legend page-legend">
+    <span><i class="sw lr"></i>Logistic Regression</span>
+    <span><i class="sw rf"></i>Random Forest</span>
+  </div>
+  <section class="kpis" id="kpis" aria-label="מדדים מרכזיים"></section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="cls" aria-selected="true">1 · השוואה לפי הקריטריונים</button>
+    <button class="tab" role="tab" data-tab="pred" aria-selected="false">2 · בפועל מול חזוי ושאריות</button>
+    <button class="tab" role="tab" data-tab="imp" aria-selected="false">3 · חשיבות משתנים</button>
+  </nav>
+
+  <section class="panel" id="panel-cls" role="tabpanel">
+    <div class="verdict-box" id="verdict"></div>
+    <div class="card table-card cmp-card">
+      <h3>השוואה לפי הקריטריונים: Recall, Precision, F1 Score, ROC, AUC</h3>
+      <p class="sub">נמדד על 2,000 לקוחות המבחן · סף החלטה 0.5</p>
+      <table id="t-criteria"></table>
+    </div>
+    <div class="grid2" style="margin-top:16px">
+      <div class="card">
+        <h3>Recall, Precision, F1 ו-AUC</h3>
+        <p class="sub">ערך גבוה יותר = מודל טוב יותר</p>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span></div>
+        <div class="chart" id="c-bars"></div>
+      </div>
+      <div class="card">
+        <h3>עקומת ROC</h3>
+        <p class="sub">ככל שהעקומה קרובה יותר לפינה השמאלית-עליונה, המודל טוב יותר</p>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="ref-sw"></i>ניחוש אקראי</span></div>
+        <div class="chart" id="c-roc"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-pred" role="tabpanel" hidden>
+    <p class="panel-intro">המשתנה החזוי הוא ההסתברות לעזיבה (0 עד 1), והערך בפועל הוא 0 או 1. כאן הוא מוצג כמו מודל רגרסיה: R² ו-MAE מחושבים על ההסתברות, והשארית היא <span class="ltr">בפועל − חזוי</span>.</p>
+    <div class="grid2">
+      <div class="card">
+        <h3>בפועל מול חזוי</h3>
+        <p class="sub">לקוחות המבחן חולקו ל-10 קבוצות שוות לפי ההסתברות החזויה</p>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span><span><i class="ref-sw"></i>חיזוי מושלם</span></div>
+        <div class="chart" id="c-calib"></div>
+        <p class="note">נקודה על הקו המקווקו פירושה שהמודל צדק: למשל, בקבוצה שחזה לה 40% עזיבה, באמת עזבו 40%.</p>
+      </div>
+      <div class="card">
+        <h3>התפלגות השאריות</h3>
+        <p class="sub">כמה לקוחות יש בכל טווח של שגיאה</p>
+        <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span></div>
+        <div class="chart" id="c-resid"></div>
+        <p class="note">ככל שיותר לקוחות קרובים ל-0, המודל מדויק יותר. שארית שלילית: חזה עזיבה ללקוח שנשאר. שארית חיובית: פספס לקוח שעזב.</p>
+      </div>
+    </div>
+    <div class="card table-card">
+      <h3>מדדים נוספים</h3>
+      <table id="t-metrics"></table>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-imp" role="tabpanel" hidden>
+    <p class="panel-intro">אילו נתונים על הלקוח השפיעו הכי הרבה על החיזוי. ב-Random Forest זו חשיבות המשתנה בעצים (Gini importance). ברגרסיה הלוגיסטית זה הערך המוחלט של המקדם אחרי נרמול. בשני המודלים החשיבות מוצגת כאחוז מסך החשיבות, כדי שאפשר יהיה להשוות ביניהם.</p>
+    <div class="card">
+      <h3>חשיבות משתנים</h3>
+      <p class="sub">ממוין לפי Random Forest</p>
+      <div class="legend"><span><i class="sw lr"></i>Logistic Regression</span><span><i class="sw rf"></i>Random Forest</span></div>
+      <div class="chart" id="c-imp"></div>
+      <p class="note" id="imp-note"></p>
+    </div>
+  </section>
+
+  <footer>נתונים: churn_modelling.csv (10,000 לקוחות) · חלוקה אקראית 80/20 מרובדת, random_state=42 · scikit-learn · הקובץ data.js נוצר על ידי train_model.py</footer>
+</div>
+<div id="tip" hidden></div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  const D = window.DASH, M = D.models;
+  const MODELS = [
+    { key: "lr", name: "Logistic Regression" },
+    { key: "rf", name: "Random Forest" },
+  ];
+  const FEAT = {
+    Age: "גיל", Geography_Germany: "מדינה: גרמניה", IsActiveMember: "לקוח פעיל", Gender_Male: "מגדר: גבר",
+    Balance: "יתרה בחשבון", NumOfProducts: "מספר מוצרים", CreditScore: "דירוג אשראי",
+    EstimatedSalary: "שכר משוער", Tenure: "ותק (שנים)", HasCrCard: "מחזיק כרטיס אשראי", Geography_Spain: "מדינה: ספרד",
+  };
+  const f3 = v => v.toFixed(3);
+  const pct = v => (v * 100).toFixed(1) + "%";
+
+  // ---------- theme toggle ----------
+  const root = document.documentElement;
+  try { const t = localStorage.getItem("churn-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+  document.getElementById("themeBtn").onclick = () => {
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("churn-theme", root.dataset.theme); } catch (e) {}
+  };
+
+  // ---------- chips ----------
+  document.getElementById("chips").innerHTML = [
+    ["לקוחות", (D.n_train + D.n_test).toLocaleString()],
+    ["אימון", D.n_train.toLocaleString() + " (80%)"],
+    ["מבחן", D.n_test.toLocaleString() + " (20%)"],
+    ["שיעור עזיבה", pct(D.churn_rate)],
+  ].map(([k, v]) => `<span class="chip">${k}: <b class="num">${v}</b></span>`).join("");
+
+  // ---------- KPI row ----------
+  const KPIS = [
+    ["recall", "Recall", "כמה מהעוזבים זוהו · גבוה = טוב", true],
+    ["precision", "Precision", "דיוק בהתראות על עזיבה · גבוה = טוב", true],
+    ["f1", "F1 Score", "איזון בין Recall ל-Precision · גבוה = טוב", true],
+    ["auc", "ROC AUC", "יכולת הפרדה בין המחלקות · גבוה = טוב", true],
+    ["r2", "R²", "שונות מוסברת של ההסתברות · גבוה = טוב", true],
+    ["mae", "MAE", "שגיאה מוחלטת ממוצעת · נמוך = טוב", false],
+  ];
+  document.getElementById("kpis").innerHTML = KPIS.map(([k, name, hint, higher]) => {
+    const a = M.lr.metrics[k], b = M.rf.metrics[k];
+    const rfWins = higher ? b > a : b < a;
+    const row = (key, label, v, win) =>
+      `<div class="row ${win ? "win" : ""}"><span class="who"><i class="sw ${key}"></i>${label}</span><span class="val num ltr">${f3(v)}</span></div>`;
+    return `<div class="kpi"><div class="k-name ltr">${name}</div><div class="k-hint">${hint.split(" · ")[0]}</div><div class="k-dir">${hint.split(" · ")[1]}</div>
+      ${row("rf", "RF", b, rfWins)}${row("lr", "LR", a, !rfWins)}
+      <div class="verdict">✓ ${rfWins ? "Random Forest" : "Logistic Regression"} עדיף</div></div>`;
+  }).join("");
+
+  // ---------- metrics table ----------
+  const rows = [
+    ["Accuracy (מבחן)", "accuracy"], ["Accuracy (אימון)", "train_accuracy"], ["R² (על ההסתברות)", "r2"], ["MAE (על ההסתברות)", "mae"],
+  ];
+  const cm = k => M[k].confusion;
+  document.getElementById("t-metrics").innerHTML =
+    `<thead><tr><th>מדד</th><th class="num">Logistic Regression</th><th class="num">Random Forest</th></tr></thead><tbody>` +
+    rows.map(([n, k]) => `<tr><td>${n}</td><td class="num">${f3(M.lr.metrics[k])}</td><td class="num">${f3(M.rf.metrics[k])}</td></tr>`).join("") +
+    `<tr><td>עוזבים שזוהו (TP)</td><td class="num">${cm("lr").tp} / ${cm("lr").tp + cm("lr").fn}</td><td class="num">${cm("rf").tp} / ${cm("rf").tp + cm("rf").fn}</td></tr>` +
+    `<tr><td>התראות שווא (FP)</td><td class="num">${cm("lr").fp}</td><td class="num">${cm("rf").fp}</td></tr></tbody>`;
+
+  // ---------- criteria comparison table ----------
+  const tprAt = (roc, v) => { let t = 0; for (const [a, b] of roc) { if (a <= v) t = b; else break; } return t; };
+  let rfAbove = 0, n = 0;
+  for (let v = 0.01; v < 1; v += 0.01) { n++; if (tprAt(M.rf.roc, v) >= tprAt(M.lr.roc, v)) rfAbove++; }
+  const rocShare = rfAbove / n;
+  const CRIT = [
+    { name: "Recall", what: "איזה חלק מהעוזבים בפועל המודל זיהה", lr: f3(M.lr.metrics.recall), rf: f3(M.rf.metrics.recall), d: M.rf.metrics.recall - M.lr.metrics.recall },
+    { name: "Precision", what: "מתוך מי שסומן כעוזב, כמה באמת עזבו", lr: f3(M.lr.metrics.precision), rf: f3(M.rf.metrics.precision), d: M.rf.metrics.precision - M.lr.metrics.precision },
+    { name: "F1 Score", what: "ממוצע הרמוני של Recall ו-Precision", lr: f3(M.lr.metrics.f1), rf: f3(M.rf.metrics.f1), d: M.rf.metrics.f1 - M.lr.metrics.f1 },
+    { name: "ROC", what: "עקומה: שיעור זיהוי מול שיעור התראות שווא בכל סף. כאן: באיזה חלק מהטווח העקומה גבוהה יותר", lr: rocShare > .5 ? "נמוכה יותר" : "גבוהה יותר", rf: rocShare > .5 ? `גבוהה יותר ב-${Math.round(rocShare * 100)}% מהטווח` : "נמוכה יותר", d: rocShare - .5, dTxt: "" },
+    { name: "AUC", what: "השטח מתחת לעקומת ה-ROC (0.5 = ניחוש, 1 = מושלם)", lr: f3(M.lr.metrics.auc), rf: f3(M.rf.metrics.auc), d: M.rf.metrics.auc - M.lr.metrics.auc },
+  ];
+  let rfWins = 0;
+  document.getElementById("t-criteria").innerHTML =
+    `<thead><tr><th>קריטריון</th><th class="num"><i class="sw lr"></i> Logistic Regression</th><th class="num"><i class="sw rf"></i> Random Forest</th><th class="num">הפרש <span class="ltr">(RF − LR)</span></th><th>המודל העדיף</th></tr></thead><tbody>` +
+    CRIT.map(c => {
+      const rf = c.d > 0; if (rf) rfWins++;
+      const diff = c.dTxt !== undefined ? "—" : (c.d >= 0 ? "+" : "−") + Math.abs(c.d).toFixed(3);
+      return `<tr><td><div class="crit ltr">${c.name}</div><div class="what">${c.what}</div></td>
+        <td class="num ${rf ? "" : "best"}">${c.lr}</td><td class="num ${rf ? "best" : ""}">${c.rf}</td>
+        <td class="num ltr">${diff}</td><td class="win-cell">✓ ${rf ? "Random Forest" : "Logistic Regression"}</td></tr>`;
+    }).join("") + "</tbody>";
+  document.getElementById("verdict").innerHTML =
+    `<b>Random Forest עדיף ב-${rfWins} מתוך ${CRIT.length} הקריטריונים.</b> הוא מזהה <b>${pct(M.rf.metrics.recall)}</b> מהעוזבים, לעומת <b>${pct(M.lr.metrics.recall)}</b> ברגרסיה הלוגיסטית (${M.rf.confusion.tp} לעומת ${M.lr.confusion.tp} מתוך ${M.rf.confusion.tp + M.rf.confusion.fn} לקוחות שעזבו), ובאותו זמן גם ההתראות שלו מדויקות יותר.`;
+
+  // ---------- svg helpers ----------
+  const NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  // anchor is visual: "start" = text begins at x and runs right, "end" = text ends at x
+  function txt(parent, x, y, s, cls, anchor, extra) {
+    const rtl = /[֐-׿]/.test(s);
+    let a = anchor || "middle";
+    if (rtl && a !== "middle") a = a === "start" ? "end" : "start";
+    const t = el("text", Object.assign({ x, y, class: cls, "text-anchor": a, direction: rtl ? "rtl" : "ltr" }, extra || {}), parent);
+    t.textContent = s;
+    return t;
+  }
+  function lin(d0, d1, r0, r1) {
+    const f = v => r0 + (v - d0) / (d1 - d0) * (r1 - r0);
+    f.inv = p => d0 + (p - r0) / (r1 - r0) * (d1 - d0);
+    return f;
+  }
+  function frame(id, H, m) {
+    const host = document.getElementById(id);
+    host.innerHTML = "";
+    const W = Math.max(300, host.clientWidth || 520);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, dir: "ltr" }, host);
+    return { svg, W, H, m, iw: W - m.l - m.r, ih: H - m.t - m.b, x0: m.l, x1: W - m.r, y0: H - m.b, y1: m.t };
+  }
+  function yGrid(f, y, ticks, fmt) {
+    ticks.forEach(v => {
+      el("line", { x1: f.x0, x2: f.x1, y1: y(v), y2: y(v), class: "grid-l" }, f.svg);
+      txt(f.svg, f.x0 - 8, y(v) + 4, fmt(v), "tick", "end");
+    });
+    el("line", { x1: f.x0, x2: f.x1, y1: f.y0, y2: f.y0, class: "base-l" }, f.svg);
+  }
+  function xTicks(f, x, ticks, fmt) {
+    ticks.forEach(v => txt(f.svg, x(v), f.y0 + 18, fmt(v), "tick"));
+  }
+  function axisTitles(f, xl, yl) {
+    txt(f.svg, f.x0 + f.iw / 2, f.H - 8, xl, "axis-title");
+    const cy = f.y1 + f.ih / 2;
+    txt(f.svg, 14, cy, yl, "axis-title", "middle", { transform: `rotate(-90 14 ${cy})` });
+  }
+  function pathD(pts) { return pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(""); }
+  // bar with 4px rounded data-end; vertical (end on top) or horizontal (end on right)
+  function barV(x, y, w, h, r) { r = Math.min(r, h, w / 2); return `M${x} ${y + h}V${y + r}Q${x} ${y} ${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h}Z`; }
+  function barH(x, y, w, h, r) { r = Math.min(r, w, h / 2); return `M${x} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h - r}Q${x + w} ${y + h} ${x + w - r} ${y + h}H${x}Z`; }
+
+  const tip = document.getElementById("tip");
+  function showTip(evt, html) {
+    tip.innerHTML = html; tip.hidden = false;
+    const r = tip.getBoundingClientRect(), pad = 14;
+    let x = evt.clientX + pad, y = evt.clientY + pad;
+    if (x + r.width > innerWidth - 8) x = evt.clientX - r.width - pad;
+    if (y + r.height > innerHeight - 8) y = evt.clientY - r.height - pad;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  function hideTip() { tip.hidden = true; }
+  const tRow = (key, label, val) => `<div class="t-r"><span><i class="sw ${key}"></i>${label}</span><b class="num ltr">${val}</b></div>`;
+  function svgX(svg, evt) {
+    const p = svg.createSVGPoint(); p.x = evt.clientX; p.y = evt.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse()).x;
+  }
+
+  // ---------- chart 1: grouped bars ----------
+  function drawBars() {
+    const f = frame("c-bars", 340, { t: 22, r: 12, b: 56, l: 52 });
+    const cats = [["recall", "Recall"], ["precision", "Precision"], ["f1", "F1 Score"], ["auc", "ROC AUC"]];
+    const y = lin(0, 1, f.y0, f.y1);
+    yGrid(f, y, [0, .2, .4, .6, .8, 1], v => v.toFixed(1));
+    const band = f.iw / cats.length, bw = Math.min(40, band * 0.32), gap = 2;
+    cats.forEach(([k, label], i) => {
+      const cx = f.x0 + band * i + band / 2;
+      txt(f.svg, cx, f.y0 + 18, label, "tick");
+      MODELS.forEach((mo, j) => {
+        const v = M[mo.key].metrics[k];
+        const x = j === 0 ? cx - gap / 2 - bw : cx + gap / 2;
+        const bar = el("path", { d: barV(x, y(v), bw, f.y0 - y(v), 4), class: "bar f-" + mo.key }, f.svg);
+        txt(f.svg, x + bw / 2, y(v) - 6, v.toFixed(2), "val-label");
+        const hit = el("rect", { x: x - 1, y: f.y1, width: bw + 2, height: f.ih, class: "hit" }, f.svg);
+        hit.addEventListener("mousemove", e => showTip(e, `<div class="t-h ltr">${label}</div>${tRow(mo.key, mo.name, f3(v))}`));
+        hit.addEventListener("mouseleave", hideTip);
+      });
+    });
+    axisTitles(f, "מדד הערכה", "ציון (0 עד 1)");
+  }
+
+  // ---------- chart 2: ROC ----------
+  function drawRoc() {
+    const f = frame("c-roc", 340, { t: 16, r: 16, b: 56, l: 52 });
+    const x = lin(0, 1, f.x0, f.x1), y = lin(0, 1, f.y0, f.y1);
+    const ticks = [0, .2, .4, .6, .8, 1];
+    yGrid(f, y, ticks, v => v.toFixed(1)); xTicks(f, x, ticks, v => v.toFixed(1));
+    el("path", { d: pathD([[x(0), y(0)], [x(1), y(1)]]), class: "ref-l" }, f.svg);
+    txt(f.svg, x(.62), y(.55), "ניחוש אקראי (AUC = 0.5)", "ref-label", "start", { transform: `rotate(${-Math.atan2(f.ih, f.iw) * 180 / Math.PI} ${x(.62)} ${y(.55)})` });
+    MODELS.forEach(mo => el("path", { d: pathD(M[mo.key].roc.map(([a, b]) => [x(a), y(b)])), class: "line s-" + mo.key }, f.svg));
+    // direct labels
+    txt(f.svg, x(.30), y(.93), `RF · AUC ${f3(M.rf.metrics.auc)}`, "val-label", "start");
+    txt(f.svg, x(.33), y(.56), `LR · AUC ${f3(M.lr.metrics.auc)}`, "val-label", "start");
+    const cross = el("line", { y1: f.y1, y2: f.y0, class: "cross", visibility: "hidden" }, f.svg);
+    const dots = MODELS.map(mo => el("circle", { r: 4.5, class: "dot f-" + mo.key, visibility: "hidden" }, f.svg));
+    const hit = el("rect", { x: f.x0, y: f.y1, width: f.iw, height: f.ih, class: "hit" }, f.svg);
+    hit.addEventListener("mousemove", e => {
+      const v = Math.min(1, Math.max(0, x.inv(svgX(f.svg, e))));
+      cross.setAttribute("x1", x(v)); cross.setAttribute("x2", x(v)); cross.setAttribute("visibility", "visible");
+      const vals = MODELS.map((mo, i) => { const t = tprAt(M[mo.key].roc, v); dots[i].setAttribute("cx", x(v)); dots[i].setAttribute("cy", y(t)); dots[i].setAttribute("visibility", "visible"); return t; });
+      showTip(e, `<div class="t-h">התראות שווא (FPR): <span class="ltr">${pct(v)}</span></div>` +
+        MODELS.map((mo, i) => tRow(mo.key, mo.name + " · זיהוי", pct(vals[i]))).join(""));
+    });
+    hit.addEventListener("mouseleave", () => { hideTip(); cross.setAttribute("visibility", "hidden"); dots.forEach(d => d.setAttribute("visibility", "hidden")); });
+    axisTitles(f, "שיעור התראות שווא (FPR)", "שיעור זיהוי עוזבים (TPR)");
+  }
+
+  // ---------- chart 3: actual vs predicted ----------
+  function drawCalib() {
+    const f = frame("c-calib", 340, { t: 16, r: 16, b: 56, l: 56 });
+    const x = lin(0, 1, f.x0, f.x1), y = lin(0, 1, f.y0, f.y1);
+    const ticks = [0, .2, .4, .6, .8, 1];
+    yGrid(f, y, ticks, v => Math.round(v * 100) + "%"); xTicks(f, x, ticks, v => Math.round(v * 100) + "%");
+    el("path", { d: pathD([[x(0), y(0)], [x(1), y(1)]]), class: "ref-l" }, f.svg);
+    MODELS.forEach(mo => {
+      const pts = M[mo.key].calibration;
+      el("path", { d: pathD(pts.map(p => [x(p.pred), y(p.actual)])), class: "line s-" + mo.key }, f.svg);
+      pts.forEach((p, i) => {
+        el("circle", { cx: x(p.pred), cy: y(p.actual), r: 4.5, class: "dot f-" + mo.key }, f.svg);
+        const hit = el("circle", { cx: x(p.pred), cy: y(p.actual), r: 12, class: "hit" }, f.svg);
+        hit.addEventListener("mousemove", e => showTip(e, `<div class="t-h">${mo.name} · קבוצה ${i + 1} מתוך 10</div>` +
+          tRow(mo.key, "חזוי (ממוצע)", pct(p.pred)) + tRow(mo.key, "עזבו בפועל", pct(p.actual)) +
+          `<div class="t-r"><span>לקוחות בקבוצה</span><b class="num">${p.n}</b></div>`));
+        hit.addEventListener("mouseleave", hideTip);
+      });
+    });
+    axisTitles(f, "הסתברות חזויה לעזיבה", "שיעור עזיבה בפועל");
+  }
+
+  // ---------- chart 4: residual distribution ----------
+  function drawResid() {
+    const f = frame("c-resid", 340, { t: 16, r: 16, b: 56, l: 60 });
+    const edges = M.lr.residual_hist.edges;
+    const centers = edges.slice(0, -1).map((e, i) => (e + edges[i + 1]) / 2);
+    const maxC = Math.max(...MODELS.flatMap(mo => M[mo.key].residual_hist.counts));
+    const top = Math.ceil(maxC / 200) * 200;
+    const x = lin(-1, 1, f.x0, f.x1), y = lin(0, top, f.y0, f.y1);
+    const yt = []; for (let v = 0; v <= top; v += top / 4) yt.push(v);
+    yGrid(f, y, yt, v => v.toLocaleString()); xTicks(f, x, [-1, -.5, 0, .5, 1], v => v.toFixed(1));
+    el("line", { x1: x(0), x2: x(0), y1: f.y1, y2: f.y0, class: "ref-l" }, f.svg);
+    txt(f.svg, x(0) + 6, f.y1 + 12, "שגיאה 0", "ref-label", "start");
+    MODELS.forEach(mo => {
+      const c = M[mo.key].residual_hist.counts;
+      el("path", { d: pathD(centers.map((cx, i) => [x(cx), y(c[i])])), class: "line s-" + mo.key }, f.svg);
+    });
+    const cross = el("line", { y1: f.y1, y2: f.y0, class: "cross", visibility: "hidden" }, f.svg);
+    const dots = MODELS.map(mo => el("circle", { r: 4.5, class: "dot f-" + mo.key, visibility: "hidden" }, f.svg));
+    const hit = el("rect", { x: f.x0, y: f.y1, width: f.iw, height: f.ih, class: "hit" }, f.svg);
+    hit.addEventListener("mousemove", e => {
+      const v = x.inv(svgX(f.svg, e));
+      let i = 0; centers.forEach((c, j) => { if (Math.abs(c - v) < Math.abs(centers[i] - v)) i = j; });
+      cross.setAttribute("x1", x(centers[i])); cross.setAttribute("x2", x(centers[i])); cross.setAttribute("visibility", "visible");
+      MODELS.forEach((mo, k) => { dots[k].setAttribute("cx", x(centers[i])); dots[k].setAttribute("cy", y(M[mo.key].residual_hist.counts[i])); dots[k].setAttribute("visibility", "visible"); });
+      showTip(e, `<div class="t-h">שארית בין <span class="ltr">${edges[i].toFixed(1)}</span> ל-<span class="ltr">${edges[i + 1].toFixed(1)}</span></div>` +
+        MODELS.map(mo => tRow(mo.key, mo.name, M[mo.key].residual_hist.counts[i] + " לקוחות")).join(""));
+    });
+    hit.addEventListener("mouseleave", () => { hideTip(); cross.setAttribute("visibility", "hidden"); dots.forEach(d => d.setAttribute("visibility", "hidden")); });
+    axisTitles(f, "שארית (בפועל − הסתברות חזויה)", "מספר לקוחות");
+  }
+
+  // ---------- chart 5: feature importance ----------
+  function drawImp() {
+    const feats = Object.keys(M.rf.importance).sort((a, b) => M.rf.importance[b] - M.rf.importance[a]);
+    const rowH = 30, bh = 11, gap = 2;
+    const f = frame("c-imp", feats.length * rowH + 70, { t: 10, r: 24, b: 56, l: 140 });
+    const maxV = Math.max(...MODELS.flatMap(mo => Object.values(M[mo.key].importance)));
+    const top = Math.ceil(maxV * 20) / 20;
+    const x = lin(0, top, f.x0, f.x1);
+    const xt = []; for (let v = 0; v <= top + 1e-9; v += 0.05) xt.push(v);
+    xt.forEach(v => { el("line", { x1: x(v), x2: x(v), y1: f.y1, y2: f.y0, class: "grid-l" }, f.svg); txt(f.svg, x(v), f.y0 + 18, Math.round(v * 100) + "%", "tick"); });
+    el("line", { x1: f.x0, x2: f.x0, y1: f.y1, y2: f.y0, class: "base-l" }, f.svg);
+    feats.forEach((ft, i) => {
+      const cy = f.y1 + rowH * i + rowH / 2;
+      txt(f.svg, f.x0 - 10, cy + 4, FEAT[ft] || ft, "tick", "end");
+      MODELS.forEach((mo, j) => {
+        const v = M[mo.key].importance[ft];
+        const yb = j === 0 ? cy - gap / 2 - bh : cy + gap / 2;
+        el("path", { d: barH(f.x0, yb, Math.max(0.5, x(v) - f.x0), bh, 4), class: "f-" + mo.key }, f.svg);
+      });
+      const hit = el("rect", { x: f.x0 - f.m.l + 4, y: cy - rowH / 2, width: f.iw + f.m.l - 4, height: rowH, class: "hit" }, f.svg);
+      hit.addEventListener("mousemove", e => showTip(e, `<div class="t-h">${FEAT[ft] || ft} <span class="ltr" style="color:var(--muted);font-weight:400">${ft}</span></div>` +
+        MODELS.map(mo => tRow(mo.key, mo.name, pct(M[mo.key].importance[ft]))).join("")));
+      hit.addEventListener("mouseleave", hideTip);
+    });
+    txt(f.svg, f.x0 + f.iw / 2, f.H - 8, "חלק מסך החשיבות במודל (%)", "axis-title");
+    const topRf = feats[0], lrSorted = Object.keys(M.lr.importance).sort((a, b) => M.lr.importance[b] - M.lr.importance[a]);
+    document.getElementById("imp-note").textContent =
+      `בשני המודלים הגיל הוא בין המשתנים החשובים ביותר. Random Forest נותן משקל גבוה גם למשתנים מספריים כמו יתרה, שכר ודירוג אשראי, כי הוא מזהה קשרים לא-ליניאריים. ברגרסיה הלוגיסטית בולטים "${FEAT[lrSorted[0]]}", "${FEAT[lrSorted[1]]}" ו-"${FEAT[lrSorted[2]]}". שימו לב: חשיבות גבוהה ב-Random Forest למשתנים רציפים (כמו שכר) יכולה לנבוע גם מכך שיש להם הרבה ערכים שונים לפצל לפיהם.`;
+  }
+
+  // ---------- tabs ----------
+  const DRAW = { cls: [drawBars, drawRoc], pred: [drawCalib, drawResid], imp: [drawImp] };
+  let current = "cls";
+  function show(tab) {
+    current = tab;
+    document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+    document.querySelectorAll(".panel").forEach(p => p.hidden = p.id !== "panel-" + tab);
+    DRAW[tab].forEach(fn => fn());
+    try { localStorage.setItem("churn-tab", tab); } catch (e) {}
+  }
+  document.querySelectorAll(".tab").forEach(b => b.onclick = () => show(b.dataset.tab));
+  let saved = location.hash.slice(1);
+  if (!DRAW[saved]) { try { saved = localStorage.getItem("churn-tab") || "cls"; } catch (e) {} }
+  show(DRAW[saved] ? saved : "cls");
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => DRAW[current].forEach(fn => fn()), 150); });
+})();
+</script>
+</body>
+</html>
